@@ -34,7 +34,8 @@ def inst_handler(time_string):
 
 tag_handlers = {'inst':inst_handler,
                 'uuid':UUID,
-                'db/fn':lambda x:x}
+                'db/fn':lambda x:x,
+                'db/id':lambda x:x}
 
 @coroutine
 def tag_handler(tag_name):
