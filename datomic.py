@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
-import httplib
+import httplib2
 import urllib
 from urlparse import urljoin
 from edn import loads
-import requests
+import sys
+if 'gevent' in sys.modules:
+    import grequests as requests
+else:
+    import requests
 
 class Database(object):
     def __init__(self, name, conn):
