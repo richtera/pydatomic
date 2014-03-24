@@ -4,12 +4,11 @@ import urllib
 from urlparse import urljoin
 from edn import loads
 import sys
-useSend = False
 if 'gevent' in sys.modules:
     import gevent
     import grequests as requests
-    useSend = True
 else:
+    gevent = None
     import requests
 import inspect
 import pprint
@@ -33,7 +32,7 @@ class Datomic(object):
 
     def create_database(self, dbname, stream=False, size=None):
         r = requests.post(self.db_url(''), data={'db-name':dbname})
-        if useSend:
+        if gevent:
             pool = Pool(size) if size else None
             jobs = [requests.send(r, pool, stream=stream)]
             gevent.joinall(jobs)
@@ -45,7 +44,7 @@ class Datomic(object):
         data = '[%s\n]' % '\n'.join(data)
         r = requests.post(self.db_url(dbname)+'/', data={'tx-data':data},
                           headers={'Accept':'application/edn'})
-        if useSend:
+        if gevent:
             pool = Pool(size) if size else None
             jobs = [requests.send(r, pool, stream=stream)]
             gevent.joinall(jobs)
@@ -61,7 +60,7 @@ class Datomic(object):
         r = requests.get(urljoin(self.location, 'api/query'),
                          params={'args' : args, 'q':query},
                          headers={'Accept':'application/edn'})
-        if useSend:
+        if gevent:
             pool = Pool(size) if size else None
             jobs = [requests.send(r, pool, stream=stream)]
             gevent.joinall(jobs)
@@ -72,7 +71,7 @@ class Datomic(object):
     def entity(self, dbname, eid, stream=False, size=None):
         r = requests.get(self.db_url(dbname) + '/-/entity', params={'e':eid},
                          headers={'Accept':'application/edn'})
-        if useSend:
+        if gevent:
             pool = Pool(size) if size else None
             jobs = [requests.send(r, pool, stream=stream)]
             gevent.joinall(jobs)
