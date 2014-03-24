@@ -4,11 +4,15 @@ import urllib
 from urlparse import urljoin
 from edn import loads
 import sys
+useSend = False
 if 'gevent' in sys.modules:
+    import gevent
     import grequests as requests
+    useSend = True
 else:
     import requests
-
+import inspect
+import pprint
 class Database(object):
     def __init__(self, name, conn):
         self.name = name
@@ -27,19 +31,29 @@ class Datomic(object):
     def db_url(self, dbname):
         return urljoin(self.location, 'data/') + self.storage + '/' + dbname
 
-    def create_database(self, dbname):
+    def create_database(self, dbname, stream=False, size=None):
         r = requests.post(self.db_url(''), data={'db-name':dbname})
+        if useSend:
+            pool = Pool(size) if size else None
+            jobs = [requests.send(r, pool, stream=stream)]
+            gevent.joinall(jobs)
+            r = r.response
         assert r.status_code in (200, 201), r.text
         return Database(dbname, self)
 
-    def transact(self, dbname, data):
+    def transact(self, dbname, data, stream=False, size=None):
         data = '[%s\n]' % '\n'.join(data)
         r = requests.post(self.db_url(dbname)+'/', data={'tx-data':data},
                           headers={'Accept':'application/edn'})
+        if useSend:
+            pool = Pool(size) if size else None
+            jobs = [requests.send(r, pool, stream=stream)]
+            gevent.joinall(jobs)
+            r = r.response
         assert r.status_code in (200, 201), (r.status_code, r.text)
         return loads(r.content)
 
-    def query(self, dbname, query, extra_args=[], history=False):
+    def query(self, dbname, query, extra_args=[], history=False, stream=False, size=None):
         args = '[{:db/alias ' + self.storage + '/' + dbname
         if history:
             args += ' :history true'
@@ -47,12 +61,22 @@ class Datomic(object):
         r = requests.get(urljoin(self.location, 'api/query'),
                          params={'args' : args, 'q':query},
                          headers={'Accept':'application/edn'})
+        if useSend:
+            pool = Pool(size) if size else None
+            jobs = [requests.send(r, pool, stream=stream)]
+            gevent.joinall(jobs)
+            r = r.response
         assert r.status_code == 200, r.text
         return loads(r.content)
 
-    def entity(self, dbname, eid):
+    def entity(self, dbname, eid, stream=False, size=None):
         r = requests.get(self.db_url(dbname) + '/-/entity', params={'e':eid},
                          headers={'Accept':'application/edn'})
+        if useSend:
+            pool = Pool(size) if size else None
+            jobs = [requests.send(r, pool, stream=stream)]
+            gevent.joinall(jobs)
+            r = r.response
         assert r.status_code == 200
         return loads(r.content)
 
