@@ -159,7 +159,14 @@ def parser(target, stop=None):
             if c in '[(':
                 target.send(tuple(l))
             elif c == '#':
-                target.send(frozenset(l))
+                if isinstance(l, list):
+                    m=[]
+                    for item in l:
+                        temp = item.get(':db/id')
+                        m.append(temp)
+                    target.send(frozenset(m))
+                else:
+                    target.send(frozenset(l))
             else:
                 if len(l)%2:
                     raise Exception("Map literal must contain an even number of elements")
