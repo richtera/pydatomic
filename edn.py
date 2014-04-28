@@ -135,9 +135,11 @@ def parser(target, stop=None):
                 char = (yield)
                 if char == '\\':
                     char = (yield)
-                    char = CHAR_MAP.get(char)
-                    if char != None:
-                        chars.append()
+                    char2 = CHAR_MAP.get(char)
+                    if char2 != None:
+                        chars.append(char2)
+                    else:
+                        chars.append(char)
                 elif char == '"':
                     target.send(''.join(chars))
                     break
@@ -175,8 +177,10 @@ def parser(target, stop=None):
                 if isinstance(l, list):
                     m=[]
                     for item in l:
-                        temp = item.get(':db/id')
-                        m.append(temp)
+                        if hasattr(item, 'get'):
+                            m.append(item.get(':db/id'))
+                        else:
+                            m.append(item)
                     target.send(frozenset(m))
                 else:
                     target.send(frozenset(l))
@@ -198,7 +202,7 @@ def loads(s):
     return l[0]
 
 if __name__ == '__main__':
-    print loads(b'(:graham/stratton true  \n , "A string with \\"s" true #uuid "f81d4fae7dec11d0a76500a0c91e6bf6")')
+    print loads(b'(:graham/stratton true  \n , "A string with \\n \\"s" true #uuid "f81d4fae7dec11d0a76500a0c91e6bf6")')
     print loads(b'[\space \\\xE2\x82\xAC [true []] ;true\n[true #inst "2012-09-10T23:39:43.309-00:00" true ""]]')
     print loads(b' {true false nil    [true, ()] 6 {#{nil false} {nil \\newline} }}')
     print loads(b'[#{6.22e-18, -3.1415, 1} true #graham #{"pie" "chips"} "work"]')
