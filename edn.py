@@ -91,6 +91,16 @@ def symbol_handler(s):
         else:
             s += c
 
+CHAR_MAP = {
+    "a": "\a",
+    "b": "\b",
+    "f": "\f",
+    "n": "\n",
+    "r": "\r",
+    "t": "\t",
+    "v": "\v"    
+}
+
 @coroutine
 def parser(target, stop=None):
     handler = None
@@ -124,7 +134,10 @@ def parser(target, stop=None):
             while 1:
                 char = (yield)
                 if char == '\\':
-                    chars.append((yield))
+                    char = (yield)
+                    char = CHAR_MAP.get(char)
+                    if char != None:
+                        chars.append()
                 elif char == '"':
                     target.send(''.join(chars))
                     break
